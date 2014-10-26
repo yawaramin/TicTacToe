@@ -52,21 +52,34 @@ type Board = [(Position, Cell)]
 
 newGame :: Board
 newGame = [(P x y, Empty) | x <- [1..3], y <- [1..3]]
+
+posns :: [Position]
 posns = map fst newGame
+
+cellPosns :: Cell -> Board -> [Position]
+cellPosns c = map fst . filter ((==c) . snd)
 
 won, lost :: Cell -> Board -> Bool
 won c b =
   any
     (\p3 -> lookup p3 b == Just c)
-    [p1 `mappend` p2 | p1 <- posns, p2 <- posns]
+    [p1 `mappend` p2 | p1 <- cp, p2 <- cp, p1 < p2]
+  where cp = cellPosns c b
 
 Player `lost` b = Computer `won` b
 Computer `lost` b = Player `won` b
 lost _ _ = False -- Cover the case of the empty cell
 
 canWin, canLose :: Cell -> Board -> Maybe Position
-canWin = undefined
-canLose = undefined
+canWin c b =
+  find
+    (\p -> lookup p b == Just Empty)
+    [p1 `mappend` p2 | p1 <- cp, p2 <- cp, p1 < p2]
+  where cp = cellPosns c b
+
+Player `canLose` b = Computer `canWin` b
+Computer `canLose` b = Player `canWin` b
+canLose _ _ = Nothing
 
 computerMove :: Board -> Maybe Position
 computerMove board
